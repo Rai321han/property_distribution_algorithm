@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -19,12 +20,18 @@ type Ratio struct {
 // Solution
 // Rounding -> use ceil -> always sum >= limit -> rule 1.1 or rule 1.2
 
-func vda(ratio map[string]float64, priority []string, dbcount map[string]int, limit int) {
+// vda
+// How Vendor Distribution Algorithm works:
+// Step 1: Remove that shares that has 0 db count, calculate based on remaining sum shares.
+// Step 2: Calculate the initial counts from available ratio and limit using ceiling to ensure we meet the limit.
+// Step 3: Calculate the total of initial counts and determine if there are extras (total - limit).
+// Step 4: If there are extras, subtract from the highest priority vendor first, then move to lower priorities until extras are removed.
+// Step 5: Check for exhausted vendors (where db count is less than allocated count) and calculate remaining slots.
+// Step 6: Distribute remaining slots to non-exhausted vendors based on priority until all slots are filled or no more vendors are available.
+func vda(ratio map[string]float64, priority []string, dbcount map[string]int, limit int) []string {
 
 	// Step: DB count check
-
 	var availableRatio float64
-	var ratioSlice []Ratio
 
 	// Remove that shares that has 0 db count, calculate based on remaining sum shares
 	for key, vendor := range dbcount {
@@ -34,22 +41,14 @@ func vda(ratio map[string]float64, priority []string, dbcount map[string]int, li
 			continue
 		}
 		availableRatio += ratio[key]
-		ratioSlice = append(ratioSlice, Ratio{
-			Key:   key,
-			Value: ratio[key],
-		})
 	}
 
 	// Step: Vendor Wise Initial Count
-
 	vendorCount := make(map[string]int)
-
-	// No vendors with non-zero db counts and non-zero ratios can have 0 share
-	reminders := limit - len(ratio)
 
 	// Calculate the initial counts from ratio and limit
 	for key, value := range ratio {
-		vendorCount[key] = int(math.Ceil((value / availableRatio) * float64(reminders)))
+		vendorCount[key] = int(math.Ceil((value / availableRatio) * float64(limit)))
 	}
 
 	// sum of initial counts
@@ -58,56 +57,77 @@ func vda(ratio map[string]float64, priority []string, dbcount map[string]int, li
 		vendorCountTotal += count
 	}
 
-	// calculate new reminders
-	// new_reminders := reminders - vendorCountTotal
+	// calculate extras after initial rounding
+	extras :=  vendorCountTotal - limit
 
-	// sort desc based on ratio
-	// slices.SortFunc(ratioSlice, func(a, b Ratio) int {
-	// 	if a.Value > b.Value {
-	// 		return -1
-	// 	}
-	// 	if a.Value < b.Value {
-	// 		return 1
-	// 	}
-	// 	return 0
-	// })
+	// subtract from highest priority if extras are there and highest priority has more than 1 share
+	if extras > 0 && vendorCount[priority[0]] > 1 {
+		vendorCount[priority[0]]--
+		extras--
+	}
 
-	// // subtract extras
+	// untill extras are removed, subtract from lowest priority if it has more than 1 share, then move to higher priority
+	for extras > 0 {
+		for i := len(priority) - 1; i >= 0 && extras > 0; i-- {
+			if vendorCount[priority[i]] > 1 {
+				vendorCount[priority[i]]--
+				extras--
+			}
+		}
+	}
 
-	// for _, ratio := range ratioSlice {
-	// 	if new_reminders == 0 {
-	// 		break
-	// 	}
-	// 	vendorCount[ratio.Key]++
-	// 	new_reminders--
-	// }
+	// Calculate total spots remains and total allocations
+	remainingSlots := 0
+	exhaustedVendors := make(map[string]bool)
+	for key, count := range vendorCount {
+		if dbcount[key] < count {
+			remainingSlots += count - dbcount[key]
+			vendorCount[key] = dbcount[key]
+			exhaustedVendors[key] = true
+		}
+	}
 
-	// // add +1 to all vendors which was deducted in the beginning for making space for 1 share for each vendor
-	// for key := range vendorCount {
-	// 	vendorCount[key]++
-	// }
+	var queue []string
 
-	// // Calculate total spots remains and total requires
-	// slotRemains := 0
-	// allocated := 0
-	// for key, count := range vendorCount {
-	// 	if dbcount[key] < count {
-	// 		slotRemains += count - dbcount[key]
-	// 		vendorCount[key] = dbcount[key]
-	// 		allocated++
-	// 	}
-	// }
+	for i := len(priority)-1; i >=0; i-- {
+		key := priority[i]
+		if !exhaustedVendors[key] {
+			queue = append(queue, key)
+		}
+	}
+	
+	for remainingSlots > 0 && len(queue) > 0 {
+		key := queue[0]
+		queue = queue[1:]
 
-	// // if no slots left, then return sequence based on priority and vendor count
-	// if slotRemains == 0 {
-	// 	// return result(vendorCount, priority)
-	// }
+		vendorCount[key]++
+		remainingSlots--
 
-	// // distribution from lower priority to higher priority until slots remains or all vendors are fulfilled
-	// for slotRemains > 0 && allocated < len(vendorCount) {
-	// 	//
-	// }
-	// // return result(vendors, priorityList)
+		if vendorCount[key] < dbcount[key] {
+			queue = append(queue, key)
+		}
+	}
+	return result(vendorCount, priority)
+}
+
+func result(vendorCount map[string]int, priority []string) []string {
+	fmt.Printf("Vendor Count: %v\n", vendorCount)
+	var result []string
+
+	for len(vendorCount) > 0 {
+		for _, key := range priority {
+			_, exists := vendorCount[key]
+			if exists && vendorCount[key] > 0 {
+				result = append(result, key)
+				vendorCount[key]--
+			}
+	
+			if vendorCount[key] == 0 {
+				delete(vendorCount, key)
+			}
+		}
+	}
+	return result
 }
 
 func main() {
@@ -117,15 +137,16 @@ func main() {
 		"11": 50,
 	}
 
-	priority := []string{"11", "12", "24"}
+	priority := []string{"24", "12", "11"}
 
 	dbCount := map[string]int{
-		"11": 100,
-		"12": 200,
-		"24": 300,
+		"11": 1,
+		"12": 1,
+		"24": 2,
 	}
 
-	limit := 4
+	limit := 8
 
-	vda(ratio, priority, dbCount, limit)
+	result := vda(ratio, priority, dbCount, limit)
+	fmt.Printf("Result: %v\n", result)
 }
