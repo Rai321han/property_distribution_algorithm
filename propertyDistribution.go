@@ -10,21 +10,33 @@ type Ratio struct {
 	Value float64
 }
 
-// vsda implements the Property Slot Distribution Algorithm.
+// propertyDistribution is a function that distributes a limited number of slots among partners based on their specified ratios and priorities, while also considering the available slots for each partner in the database.
+// 
+// It takes a ratio map (partner key to ratio), a priority list of partner keys, a db count map (partner key to available slots), and a limit on total slots to distribute.
+// 
+// It returns a list of partner keys representing the allocated slots, ordered by priority.
+// 
+//
+// example usage:
+// 	ratio := map[string]float64{"partnerA": 50, "partnerB": 30, "partnerC": 20}
+// 	priority := []string{"partnerA", "partnerB", "partnerC"}
+// 	dbcount := map[string]int{"partnerA": 5, "partnerB": 3, "partnerC": 2}
+// 	limit := 7
+// 	result := propertyDistribution(ratio, priority, dbcount, limit)
+//
 //
 // How it works:
 //
 //  1. Remove partners that have 0 db count and recalculate the ratio
 //     based on the remaining partners' total share.
 //
-//  2. Calculate the initial allocation for each vendor using the
-//     available ratio and the given limit. Use ceiling to ensure
-//     the total can reach the limit.
+//  2. Calculate the initial allocation for each partner using the
+//     available ratio and the given limit.
 //
 //  3. Sum the initial allocations and determine extras
 //     (extras = totalAllocated - limit).
 //
-//  4. If extras exist, subtract from the highest priority vendor
+//  4. If extras exist, subtract from the highest priority partner
 //     first, then continue to lower priority partners until the
 //     extras are removed.
 //
@@ -34,14 +46,17 @@ type Ratio struct {
 //  6. Distribute the remaining slots to non-exhausted partners based
 //     on priority until all slots are filled or no partners remain.
 //
-//  7. Return the final allocation as a list of vendor keys, ordered by priority.
+//  7. Return the final allocation as a list of partner keys, ordered by priority.
 //
 // Constraints:
 //
 //	minimum allocation is 1, maximum is db count
-//	partners <= limit
-func psda(ratio map[string]float64, priority []string, dbcount map[string]int, limit int) []string {
-	// These maps will hold the active vendors after filtering out those with 0 db count, and their corresponding ratios and db counts.
+//	1 <= limit
+// 	total partners <= limit
+// 	dbcount[partner] >= 0
+// 	ratio[partner] >= 0
+func propertyDistribution(ratio map[string]float64, priority []string, dbcount map[string]int, limit int) []string {
+	// These maps will hold the active partners after filtering out those with 0 db count, and their corresponding ratios and db counts.
 	activeRatio := make(map[string]float64)
 	activeDB := make(map[string]int)
 	removed := make(map[string]bool)
@@ -64,7 +79,7 @@ func psda(ratio map[string]float64, priority []string, dbcount map[string]int, l
 		return nil
 	}
 
-	// remove vendor from priority if it is removed in previous step
+	// remove partner from priority if it is removed in previous step
 	var updatedPriority []string
 	for _, key := range priority {
 		if !removedPriority[key] {
@@ -72,7 +87,7 @@ func psda(ratio map[string]float64, priority []string, dbcount map[string]int, l
 		}
 	}
 
-	// Calculate the initial counts from ratio and limit, and sum the total allocated count for all vendors.
+	// Calculate the initial counts from ratio and limit, and sum the total allocated count for all partners.
 	initialAllocationCount := 0
 	partnerWiseCount := make(map[string]int)
 	for key, value := range activeRatio {
@@ -86,6 +101,7 @@ func psda(ratio map[string]float64, priority []string, dbcount map[string]int, l
 
 	// subtract from highest priority if extras are there and highest priority has more than 1 share
 	if extras > 0 {
+		// if highest priority partner has only 1 then move toward next higher
 		for _, key := range updatedPriority {
 			if partnerWiseCount[key] > 1 {
 				partnerWiseCount[key]--
@@ -107,12 +123,12 @@ func psda(ratio map[string]float64, priority []string, dbcount map[string]int, l
 
 	// Calculate total spots remains and total allocations
 	remainingSlots := 0
-	exhaustedVendors := make(map[string]bool)
+	exhaustedpartners := make(map[string]bool)
 	for key, count := range partnerWiseCount {
 		if activeDB[key] <= count {
 			remainingSlots += count - activeDB[key]
 			partnerWiseCount[key] = activeDB[key]
-			exhaustedVendors[key] = true
+			exhaustedpartners[key] = true
 		}
 	}
 
@@ -121,7 +137,7 @@ func psda(ratio map[string]float64, priority []string, dbcount map[string]int, l
 	if remainingSlots > 0 {
 		for i := len(updatedPriority) - 1; i >= 0; i-- {
 			key := updatedPriority[i]
-			if !exhaustedVendors[key] {
+			if !exhaustedpartners[key] {
 				queue = append(queue, key)
 			}
 		}

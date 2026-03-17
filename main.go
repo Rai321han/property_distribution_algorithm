@@ -15,7 +15,7 @@ func main() {
 
 	for _, testCase := range testCases {
 		fmt.Printf("Test Case: %s\n", testCase.Description)
-		result := psda(testCase.Ratio, testCase.Priority, testCase.DBCount, testCase.Limit)
+		result := propertyDistribution(testCase.Ratio, testCase.Priority, testCase.DBCount, testCase.Limit)
 		fmt.Println("Limit:", testCase.Limit)
 		fmt.Printf("Ratio: %v\n", testCase.Ratio)
 		fmt.Printf("Priority: %v\n", testCase.Priority)
