@@ -39,6 +39,9 @@ The implementation assumes:
 
 ## How It Works
 
+[[!NOTE]]
+> This algorithm is not optimized yet. It focuses on correctness and clarity, with potential for future performance improvements.
+
 The algorithm runs in stages.
 
 ### Step 1. Filter Active Partners
