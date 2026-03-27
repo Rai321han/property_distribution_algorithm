@@ -123,7 +123,7 @@ Overall propertyDistribution:
  | --------- | -------------- |
  | Filter Active Partners | O(n) |
  | Initial Ratio Allocation (Ceiling) | O(n) |
- | Remove Ceiling Extras  | O(n²)  <span style="color: rgb(192, 125, 1);">*needs improvement* |
+ | Remove Ceiling Extras  | O(n²) *needs improvement* |
  | Cap by Capacity | O(n) |
  | Redistribute Freed Slots | O(n + L) |
  | Drop Lowest Priority | O(n) |

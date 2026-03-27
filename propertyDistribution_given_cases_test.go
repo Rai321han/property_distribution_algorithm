@@ -124,9 +124,6 @@ func TestPropertyDistributionGivenCases(t *testing.T) {
 
 		// sort
 		sort.SliceStable(pairs, func(i, j int) bool {
-			if pairs[i].value == pairs[j].value {
-				return pairs[i].key < pairs[j].key
-			}
 			return pairs[i].value > pairs[j].value
 		})
 
