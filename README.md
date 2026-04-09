@@ -1,6 +1,7 @@
 # Property Distribution Algorithm
 
 ## Content Outline:
+
 - [Overview](#overview)
 - [Inputs and Output](#inputs-and-output)
 - [Validation and Assumptions](#validation-and-assumptions)
@@ -8,7 +9,6 @@
 - [Deterministic Properties](#deterministic-properties)
 - [Complexity](#complexity)
 - [Running Tests](#running-tests)
-
 
 ## Overview
 
@@ -26,18 +26,18 @@ The core function is `propertyDistribution(...)`, implemented in Go.
 ### Inputs
 
 - `ratio map[string]float64`
-	- Relative weight for each partner.
+  - Relative weight for each partner.
 - `priority []string`
-	- Partners ordered from highest to lowest priority.
+  - Partners ordered from highest to lowest priority.
 - `dbcount map[string]int`
-	- Maximum available items for each partner.
+  - Maximum available items for each partner.
 - `limit int`
-	- Total number of slots to allocate.
+  - Total number of slots to allocate.
 
 ### Output
 
 - `[]string`
-	- A sequence of partner feeds respecting the priority order.
+  - A sequence of partner feeds respecting the priority order.
 
 ## Validation and Assumptions
 
@@ -78,7 +78,7 @@ the total equals `limit`.
 Strategy used in code:
 
 - first attempt to remove from the highest-priority partner (if that partner has
-	more than 1),
+  more than 1),
 - then continue removing from lowest to highest priority,
 - never reduce a partner below 1.
 
@@ -119,20 +119,20 @@ Let:
 ### Time Complexity
 
 Overall propertyDistribution:
- |  Stages    |   Complexity   |
- | --------- | -------------- |
- | Filter Active Partners | O(n) |
- | Initial Ratio Allocation (Ceiling) | O(n) |
- | Remove Ceiling Extras  | O(n²) *needs improvement* |
- | Cap by Capacity | O(n) |
- | Redistribute Freed Slots | O(n + L) |
- | Drop Lowest Priority | O(n) |
- | Build Final Sequence | O(n + L)|
+| Stages | Complexity |
+| --------- | -------------- |
+| Filter Active Partners | O(n) |
+| Initial Ratio Allocation (Ceiling) | O(n) |
+| Remove Ceiling Extras | O(nlogn) |
+| Cap by Capacity | O(n) |
+| Redistribute Freed Slots | O(n + L) |
+| Drop Lowest Priority | O(n) |
+| Build Final Sequence | O(n + L)|
 
 Overall worst-case time complexity:
 
 $$
-O(n^2 + L)
+O(n\log n + L)
 $$
 
 ### Space Complexity

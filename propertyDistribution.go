@@ -104,6 +104,21 @@ func ceilAllocate(priority []string, activeRatio map[string]float64, limit int) 
 	return allocated
 }
 
+// How removeExtras works:
+// 1. Calculate how many extras we have: sum of allocated - limit.
+// 2. If extras > 0, try to remove one slot from the highest-priority partner
+//    that has more than 1 slot allocated. This ensures we don't reduce any
+//    partner to zero if they were allocated at least 1 slot.
+// 3. If there are still extras after step 2, we need to remove more slots.
+//    We calculate how many slots can be removed from each partner (allocated - 1)
+//    and sort these counts in ascending order.
+// 4. We then iterate through the sorted removable counts, removing slots in
+//    rounds until we've removed all extras. In each round, we remove one slot
+//    from all partners that still have removable slots until we exhaust the next
+//    partner's removable count, then move on to the next one.
+// 5. Finally, if there are still extras left (which can happen if all partners had only 1 slot to remove), we remove them from the lowest-priority partners one by one until we've removed all extras.
+
+// removeExtras reduces the allocated counts to remove any extras above the limit.
 func removeExtras(allocated map[string]int, priority []string, limit int) {
 	extras := sumValues(allocated) - limit
 
