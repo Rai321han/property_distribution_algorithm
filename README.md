@@ -6,8 +6,7 @@
 - [Inputs and Output](#inputs-and-output)
 - [Validation and Assumptions](#validation-and-assumptions)
 - [How It Works](#how-it-works)
-- [Deterministic Properties](#deterministic-properties)
-- [Complexity](#complexity)
+- [Time and Space Complexity](#time-and-space-complexity)
 - [Running Tests](#running-tests)
 
 ## Overview
@@ -48,9 +47,6 @@ The implementation assumes:
 - `dbcount[p] >= 0`
 
 ## How It Works
-
-> [!NOTE]
-> This algorithm is not optimized yet. It focuses on correctness and clarity, with potential for future performance improvements.
 
 The algorithm runs in stages.
 
@@ -102,14 +98,7 @@ partners are dropped until count fits.
 The final per-partner counts are converted into an ordered list respecting the
 priority order.
 
-## Deterministic Properties
-
-Given the same input maps/slice values, output is deterministic because:
-
-- all operational traversal uses the `priority` slice,
-- redistribution follows a fixed queue order.
-
-## Complexity
+## Time and Space Complexity
 
 Let:
 

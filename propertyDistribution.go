@@ -145,10 +145,6 @@ func redistributeFreed(
 	activeDB map[string]int,
 	freed int,
 ) {
-
-	if freed == 0 {
-		return
-	}
 	capacity := buildCapacity(priority, func(k string) int {
 		return activeDB[k] - allocated[k]
 	})
@@ -242,7 +238,6 @@ func rebalanceAllocation(allocated map[string]int,
 	}
 
 	sort.Slice(parts, func(i, j int) bool { return parts[i].cap < parts[j].cap })
-
 	totalRounds := 0
 	active := len(parts) // participants who can still be reduced
 	prev := 0
